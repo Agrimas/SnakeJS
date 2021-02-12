@@ -28,9 +28,9 @@
 		flex-direction: column;
 	}
 
-	#GameSnake canvas,
-	#GameSnake2 canvas {
-		background-image: url('/img/gazon.jpg');
+	canvas {
+		box-sizing: border-box;
+		/* background-image: url('/img/gazon.jpg'); */
 		border: 10px solid orange;
 		border-image-source: url('/img/wood.jpg');
 		border-image-slice: 20;
@@ -39,17 +39,12 @@
 </style>
 
 <body>
-	<img src="/img/apple.png" alt="" id="apple" style="display: none;">
 	<div class="container">
 		<h1>My snake</h1>
-		<div id="GameSnake"></div>
+		<canvas id="canvas" width="500" height="500"></canvas>
 	</div>
+
 	<script src="/js/snake.js"></script>
-	<script>
-		window.onload = function () {
-			new snakeGame('GameSnake', 500, 500);
-		}
-	</script>
 </body>
 
 </html>
