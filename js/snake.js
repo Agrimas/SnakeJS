@@ -69,13 +69,15 @@ window.onload = function () {
 	class Snake {
 		constructor() {
 			this.segments = [
-				new Block(9, 5),
-				new Block(8, 5),
-				new Block(7, 5),
-				new Block(6, 5),
-				new Block(5, 5),
-				new Block(4, 5),
-				new Block(3, 5),
+				new Block(9, 2),
+				new Block(8, 2),
+				new Block(7, 2),
+				new Block(6, 2),
+				new Block(5, 2),
+				new Block(4, 2),
+				new Block(3, 2),
+				new Block(2, 2),
+				new Block(1, 2),
 			];
 			this.direction = 'right';
 			this.nextDirection = 'right';
@@ -84,6 +86,12 @@ window.onload = function () {
 				headRight: $('<img>').attr('src', '/img/snake-head-right.png')[0],
 				headUp: $('<img>').attr('src', '/img/snake-head-up.png')[0],
 				headDown: $('<img>').attr('src', '/img/snake-head-down.png')[0],
+				bodyG: $('<img>').attr('src', '/img/snake-body-g.png')[0],
+				bodyH: $('<img>').attr('src', '/img/snake-body-h.png')[0],
+				tailLeft: $('<img>').attr('src', '/img/snake-tail-left.png')[0],
+				tailRight: $('<img>').attr('src', '/img/snake-tail-right.png')[0],
+				tailUp: $('<img>').attr('src', '/img/snake-tail-up.png')[0],
+				tailDown: $('<img>').attr('src', '/img/snake-tail-down.png')[0],
 				turn1: $('<img>').attr('src', '/img/snake-turn1.png')[0],
 				turn2: $('<img>').attr('src', '/img/snake-turn2.png')[0],
 				turn3: $('<img>').attr('src', '/img/snake-turn3.png')[0],
@@ -94,7 +102,6 @@ window.onload = function () {
 		draw() {
 			this.drawHead();
 			this.drawBody();
-			// this.drawTail();
 		}
 
 		drawHead() {
@@ -125,14 +132,35 @@ window.onload = function () {
 			} else {
 				directionBody = false;
 			}
+
 			for (let index = 1; index < this.segments.length; index++) {
 				let bodyBlock = this.segments[index];
 				let img = new Image;
 				let [isTail, isBend] = [false, false];
 
-				// Проверка и отрисовка головы
+				// Проверка и отрисовка хвоста
 				if (bodyBlock.equal(tail)) {
-					bodyBlock.drawSquare('blue');
+					let directionTail = this.direction;
+					if (bendBlocks.length > 0) {
+						directionTail = bendBlocks[0].direction;
+						if (tail.equal(bendBlocks[0])) {
+							directionTail = bendBlocks[0].nextDirection;
+						}
+					}
+					switch (directionTail) {
+						case 'right':
+							bodyBlock.drawImage(this.imgs.tailRight);
+							break;
+						case 'left':
+							bodyBlock.drawImage(this.imgs.tailLeft);
+							break;
+						case 'up':
+							bodyBlock.drawImage(this.imgs.tailUp);
+							break;
+						case 'down':
+							bodyBlock.drawImage(this.imgs.tailDown);
+							break;
+					}
 					isTail = true;
 				}
 
@@ -163,16 +191,12 @@ window.onload = function () {
 				// Отрисовка тела
 				if (isBend == false && isTail == false) {
 					if (directionBody) {
-						bodyBlock.drawSquare('yellow');
+						bodyBlock.drawImage(imgs.bodyG);
 					} else {
-						bodyBlock.drawSquare('green');
+						bodyBlock.drawImage(imgs.bodyH);
 					}
 				}
 			}
-		}
-
-		drawTail() {
-			this.segments[this.segments.length - 1].drawSquare('blue');
 		}
 
 		checkCollision(head) {
@@ -197,7 +221,9 @@ window.onload = function () {
 		move() {
 			let head = this.segments[0];
 			let newHead;
+			let bend = false;
 			if (this.direction !== this.nextDirection) {
+				bend = true;
 				bendBlocks.push({
 					col: head.col,
 					row: head.row,
@@ -206,6 +232,7 @@ window.onload = function () {
 				});
 			}
 			this.direction = this.nextDirection;
+
 			switch (this.direction) {
 				case 'right':
 					newHead = new Block(head.col + 1, head.row);
@@ -222,6 +249,9 @@ window.onload = function () {
 			}
 
 			if (this.checkCollision(newHead)) {
+				if (bend) {
+					this.direction = bendBlocks[bendBlocks.length - 1].direction;
+				}
 				gameOver();
 				return;
 			}
@@ -233,7 +263,7 @@ window.onload = function () {
 					speed -= 10;
 				}
 				score++;
-				apple.move();
+				apple.move(this.segments);
 			} else {
 				this.segments.pop();
 			}
@@ -255,19 +285,26 @@ window.onload = function () {
 	class Apple {
 		constructor() {
 			this.position = new Block(10, 10);
+			this.move = this.move.bind(this);
 		}
 
 		draw() {
 			let img = new Image();
 			img.src = '/img/apple.png';
 			this.position.drawImage(img);
-			// this.position.drawCircle('red');
 		}
 
-		move() {
+		move(limitation = []) {
 			let randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
 			let randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) + 1;
 			this.position = new Block(randomCol, randomRow);
+			limitation.forEach((value, index) => {
+				if (this.position.equal(value)) {
+					this.move(limitation);
+					return;
+				}
+			})
+			return this.position;
 		}
 	}
 
@@ -276,9 +313,10 @@ window.onload = function () {
 	canvas.insertAdjacentElement('beforebegin', blockScore);
 	let apple = new Apple();
 	let snake = new Snake();
+	apple.move(snake.segments);
 	let speed = 200;
 
-	let timerId = setTimeout(function request() {
+	let timerId = setTimeout(function gameSnake() {
 		if (speed === 0) {
 			return;
 		}
@@ -287,6 +325,6 @@ window.onload = function () {
 		snake.move();
 		snake.draw();
 		apple.draw();
-		timerId = setTimeout(request, speed);
+		timerId = setTimeout(gameSnake, speed);
 	}, speed);
 }
